@@ -5,40 +5,37 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>숫자 야구 게임</title>
     <style>
-        /* 1. 모바일 키보드가 올라와도 화면이 밖으로 나가지 않도록 100% 고정 */
-        html, body {
+        /* 기본 레이아웃 및 폰트 설정 */
+        body {
             margin: 0;
             padding: 0;
-            height: 100%; 
             background-color: #f0f0f0;
             font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
-            overflow: hidden; /* 브라우저 자체 스크롤 차단 */
+            display: flex;
+            justify-content: center;
         }
 
-        /* 2. 메인 컨테이너 (유연한 Flexbox 레이아웃) */
+        /* 앱 화면(LinearLayout) 모방 컨테이너 */
         .app-container {
             width: 100%;
             max-width: 400px;
-            height: 100%; /* 화면 높이에 딱 맞춤 */
-            margin: 0 auto;
             background-color: white;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
+            border: 2px solid #ccc;
             box-sizing: border-box;
-            border-left: 2px solid #ccc;
-            border-right: 2px solid #ccc;
         }
 
-        /* 3. 4컷 만화 영역 (위쪽 고정) */
+        /* 4컷 만화 레이아웃 (결과창 위) */
         .comic-layout {
             padding: 10px;
             background-color: #f9f9f9;
             border-bottom: 2px solid #ccc;
-            flex-shrink: 0; /* 키보드가 올라와도 찌그러지지 않음 */
         }
         .comic-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: repeat(2, 1fr); /* 2x2 격자 배열 */
             gap: 6px;
         }
         .comic-grid img {
@@ -49,59 +46,53 @@
             border: 2px solid #333;
             border-radius: 4px;
             box-sizing: border-box;
-            background-color: #ddd; /* 이미지 로딩 전 기본 색상 */
 
-            /* 애니메이션 기본 세팅 */
+            /* 애니메이션 추가: 처음에는 숨기고 약간 아래로 내려둠 */
             opacity: 0; 
             transform: translateY(15px); 
-            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
         }
-        /* 자바스크립트가 show 클래스를 붙이면 짠! 하고 나타납니다 */
+        
+        /* 자바스크립트로 이 클래스가 추가되면 화면에 나타남 */
         .comic-grid img.show {
-            opacity: 1 !important;
-            transform: translateY(0) !important;
+            opacity: 1;
+            transform: translateY(0);
         }
 
-        /* 4. 결과 기록 영역 (가운데 유동적 확장) */
+        /* 결과 기록 텍스트 영역 (점선으로 둘러싼 창) */
         #result_text {
-            flex-grow: 1; /* 남은 빈 공간을 모두 차지함 (키보드 올라오면 자동으로 줄어듦!) */
+            height: 230px;
             margin: 10px;
             font-size: 16px;
             font-weight: bold;
-            overflow-y: auto; /* 내용이 넘치면 여기만 스크롤 됨 */
+            overflow-y: auto; 
             white-space: pre-wrap;
-            border: 2px dashed #FFED983A;
+            border: 2px dashed #FFED983A; /* 당근/노란색 점선 테두리 */
             padding: 10px;
             background-color: #fafafa;
         }
 
-        /* 5. 입력창 및 버튼 영역 (아래쪽 고정) */
-        .bottom-controls {
-            flex-shrink: 0; /* 절대 크기가 줄어들지 않음 */
-            padding-bottom: 15px; /* 하단 여백 */
-        }
-
+        /* 숫자 입력칸 */
         #reque {
-            display: block;
-            width: calc(100% - 20px);
             height: 40px;
-            margin: 0 10px 10px 10px;
+            margin: 0 10px;
             font-size: 18px;
             font-weight: bold;
             text-align: center;
             border: 2px solid #FFED983A;
             border-radius: 5px;
-            box-sizing: border-box;
         }
 
+        /* 버튼 그룹 */
         .button-layout {
             display: flex;
-            margin: 0 10px;
-            gap: 10px;
+            margin: 10px 5px;
         }
         
+        /* 활성화 상태 상관없이 노란색 배경에 검은색 글자 고정 */
         .btn {
             flex: 1;
+            margin: 0 5px;
             padding: 12px 0;
             background-color: #FFED983A !important; 
             color: #000000 !important;             
@@ -112,7 +103,7 @@
             cursor: pointer;
         }
         .btn:disabled {
-            opacity: 0.6;
+            opacity: 0.7; /* 비활성화 시 약간의 불투명도만 적용해 클릭 불가 상태 표현 */
             cursor: not-allowed;
         }
     </style>
@@ -131,64 +122,74 @@
 
     <div id="result_text"></div>
 
-    <div class="bottom-controls">
-        <input type="number" id="reque" placeholder="숫자를 입력해주세요" maxlength="3" oninput="maxLengthCheck(this)" autofocus>
-        <div class="button-layout">
-            <button id="answerB" class="btn">투구!!</button>
-            <button id="resetB" class="btn">처음부터</button>
-        </div>
+    <input type="number" id="reque" placeholder="숫자를 입력해주세요" maxlength="3" oninput="maxLengthCheck(this)" autofocus>
+
+    <div class="button-layout">
+        <button id="answerB" class="btn">투구!!</button>
+        <button id="resetB" class="btn">처음부터</button>
     </div>
 </div>
 
 <script>
+    // HTML 요소 변수 할당
     const reque = document.getElementById('reque');
     const resultText = document.getElementById('result_text');
     const answerBtn = document.getElementById('answerB');
     const resetBtn = document.getElementById('resetB');
 
+    // 게임 변수
     let comNumbers = [];
     let lifeCount = 10;
     let strike = 0;
     let ball = 0;
     
-    // 이미지 로딩을 기다리지 않고 HTML이 준비되면 즉시 실행! (안전성 강화)
-    document.addEventListener("DOMContentLoaded", function() {
+    // 페이지가 시작하면 자동으로 게임을 세팅, 커서 띄우기, 애니메이션 시작
+    window.onload = function() {
         initGame();
-        animateComics();
-    });
+        animateComics(); // 만화 컷 애니메이션 실행
+    };
 
-    // 🌟 만화 컷 순차적 애니메이션
+    // 만화 컷 2초 간격 애니메이션 로직
     function animateComics() {
         const panels = document.querySelectorAll('.comic-grid img');
         
         panels.forEach((panel, index) => {
-            // 0.6초 간격으로 이미지가 하나씩 등장
+            // index 값(0, 1, 2, 3)에 2000(2초)를 곱해 0초, 2초, 4초, 6초 뒤에 실행되도록 합니다.
+            // (만약 첫 컷도 2초 뒤에 나오게 하고 싶다면 (index + 1) * 2000 으로 변경하시면 됩니다.)
             setTimeout(() => {
                 panel.classList.add('show');
-            }, (index + 1) * 600); 
+            }, index * 2000); 
         });
     }
 
-    // 게임 자동 시작
+    // 게임 자동 시작 및 초기화 로직
     function initGame() {
         reset();
         randomNumber();
         viewMode("start");
         
+        // 입력창에 자동으로 커서가 들어가고 키보드가 뜨도록 유도
         reque.focus(); 
         resultText.innerText = "★ 숫자가 생성되었습니다. 게임 시작! ★\n\n";
     }
 
+    // 버튼 이벤트 리스너 등록
     answerBtn.addEventListener('click', function() {
         numberCheck();
-        reque.value = ""; 
-        reque.focus();    
+        reque.value = ""; // 투구 후 입력창 비우기
+        reque.focus();    // 다시 커서 넣기
     });
 
     resetBtn.addEventListener('click', function() {
-        initGame(); 
+        toastMessage("초기화");
+        initGame(); // 처음부터 버튼을 누르면 즉시 재시작
     });
 
+    function toastMessage(msg) {
+        console.log(msg); 
+    }
+
+    // 화면 상태 관리 (시작 버튼이 없으므로 단순 활성화 관리)
     function viewMode(mode) {
         if (mode === "start") {
             answerBtn.disabled = false;
@@ -200,6 +201,7 @@
         }
     }
 
+    // 중복 없는 랜덤 숫자 3개 생성 (1~9)
     function randomNumber() {
         let set = new Set();
         while (set.size < 3) {
@@ -207,9 +209,10 @@
             set.add(randomValue);
         }
         comNumbers = Array.from(set);
-        comNumbers.sort(() => Math.random() - 0.5);
+        comNumbers.sort(() => Math.random() - 0.5); // 셔플
     }
 
+    // 변수 초기화
     function reset() {
         lifeCount = 10;
         resultText.innerText = "";
@@ -218,6 +221,7 @@
         ball = 0;
     }
 
+    // 정답 체크 로직
     function numberCheck() {
         let inputNumber = reque.value;
 
@@ -230,6 +234,7 @@
                 parseInt(inputNumber.substring(2, 3))
             ];
 
+            // 랜덤값과 입력값 비교
             for (let num = 0; num < 3; num++) {
                 for (let num2 = 0; num2 < 3; num2++) {
                     if (comNumbers[num] === userNumbers[num2]) {
@@ -242,11 +247,14 @@
                 }
             }
 
+            // 상단 상태창이 없으므로 결과창 내부에 정보를 가독성 있게 표현
             if (strike === 3) {
+                toastMessage("성공");
                 resultText.innerText += `▶ ${inputNumber} : 3 Strike!! 홈런! 🎉\n`;
                 resultText.innerText += ` 정답: ${comNumbers.join('')} -> 게임 성공!\n`;
                 viewMode("end"); 
             } else if (lifeCount === 0) {
+                toastMessage("실패");
                 resultText.innerText += `▶ ${inputNumber} : ${strike}S ${ball}B\n`;
                 resultText.innerText += ` 기회를 모두 소진했습니다. 실패! 😢\n`;
                 resultText.innerText += ` 정답은 [ ${comNumbers.join('')} ] 이었습니다.\n`;
@@ -255,6 +263,7 @@
                 showResult(inputNumber);
             }
 
+            // 초기화
             strike = 0;
             ball = 0;
 
@@ -263,12 +272,15 @@
         }
     }
 
+    // 결과 텍스트 누적 기록 함수 (남은 기회 함께 표시)
     function showResult(inputNumber) {
         let result = `Strike: ${strike}, Ball: ${ball}`;
         resultText.innerText += `[기회:${lifeCount}번]  ${inputNumber}  ☞  ${result}\n`;
+        // 스크롤을 항상 맨 아래로 유지
         resultText.scrollTop = resultText.scrollHeight;
     }
 
+    // 글자수 제한 보조 함수
     function maxLengthCheck(object){
         if (object.value.length > object.maxLength){
             object.value = object.value.slice(0, object.maxLength);
