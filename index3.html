@@ -38,6 +38,8 @@
             grid-template-columns: repeat(2, 1fr); /* 2x2 격자 배열 */
             gap: 6px;
         }
+        
+        /* 💡 애니메이션 기본 설정 추가 */
         .comic-grid img {
             width: 100%;
             height: auto;
@@ -46,14 +48,15 @@
             border: 2px solid #333;
             border-radius: 4px;
             box-sizing: border-box;
-
-            /* 애니메이션 추가: 처음에는 숨기고 약간 아래로 내려둠 */
+            
+            /* 처음에는 투명하게 숨기고, 살짝 아래에 위치시킵니다 */
             opacity: 0; 
             transform: translateY(15px); 
+            /* 부드럽게 나타나는 효과 (0.8초 동안 진행) */
             transition: opacity 0.8s ease-out, transform 0.8s ease-out;
         }
         
-        /* 자바스크립트로 이 클래스가 추가되면 화면에 나타남 */
+        /* 💡 JS가 이 클래스를 추가하면 화면에 스르륵 나타납니다 */
         .comic-grid img.show {
             opacity: 1;
             transform: translateY(0);
@@ -143,19 +146,20 @@
     let strike = 0;
     let ball = 0;
     
-    // 페이지가 시작하면 자동으로 게임을 세팅, 커서 띄우기, 애니메이션 시작
+    // 페이지가 시작하면 자동으로 게임을 세팅하고 커서를 띄웁니다.
     window.onload = function() {
         initGame();
-        animateComics(); // 만화 컷 애니메이션 실행
+        animateComics(); // 💡 2초 간격 만화 애니메이션 함수 실행
     };
 
-    // 만화 컷 2초 간격 애니메이션 로직
+    // 💡 만화 컷 2초 간격 애니메이션 로직
     function animateComics() {
+        // 4개의 이미지를 모두 찾습니다.
         const panels = document.querySelectorAll('.comic-grid img');
         
         panels.forEach((panel, index) => {
-            // index 값(0, 1, 2, 3)에 2000(2초)를 곱해 0초, 2초, 4초, 6초 뒤에 실행되도록 합니다.
-            // (만약 첫 컷도 2초 뒤에 나오게 하고 싶다면 (index + 1) * 2000 으로 변경하시면 됩니다.)
+            // index는 0, 1, 2, 3입니다. 여기에 2000(2초)을 곱해서 시간을 지연시킵니다.
+            // 1컷: 0초, 2컷: 2초, 3컷: 4초, 4컷: 6초 뒤에 차례대로 'show' 클래스가 붙어 나타납니다.
             setTimeout(() => {
                 panel.classList.add('show');
             }, index * 2000); 
