@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>숫자 야구 게임</title>
+    <style>
+        /* 기본 레이아웃 및 폰트 설정 */
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+            font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+            display: flex;
+            justify-content: center;
+        }
+
+        /* 앱 화면(LinearLayout) 모방 컨테이너 */
+        .app-container {
+            width: 100%;
+            max-width: 400px;
+            background-color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            border: 2px solid #ccc;
+            box-sizing: border-box;
+        }
+
+        /* 4컷 만화 레이아웃 (결과창 위) */
+        .comic-layout {
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-bottom: 2px solid #ccc;
+        }
+        .comic-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); /* 2x2 격자 배열 */
+            gap: 6px;
+        }
+        .comic-grid img {
+            width: 100%;
+            height: auto;
+            aspect-ratio: 4 / 3;
+            object-fit: cover;
+            border: 2px solid #333;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        /* 결과 기록 텍스트 영역 (점선으로 둘러싼 창) */
+        #result_text {
+            height: 230px;
+            margin: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            overflow-y: auto; 
+            white-space: pre-wrap;
+            border: 2px dashed #FFED983A; /* 당근/노란색 점선 테두리 */
+            padding: 10px;
+            background-color: #fafafa;
+        }
+
+        /* 숫자 입력칸 */
+        #reque {
+            height: 40px;
+            margin: 0 10px;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            border: 2px solid #FFED983A;
+            border-radius: 5px;
+        }
+
+        /* 버튼 그룹 */
+        .button-layout {
+            display: flex;
+            margin: 10px 5px;
+        }
+        
+        /* 활성화 상태 상관없이 노란색 배경에 검은색 글자 고정 */
+        .btn {
+            flex: 1;
+            margin: 0 5px;
+            padding: 12px 0;
+            background-color: #FFED983A !important; 
+            color: #000000 !important;             
+            font-size: 18px;
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .btn:disabled {
+            opacity: 0.7; /* 비활성화 시 약간의 불투명도만 적용해 클릭 불가 상태 표현 */
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="comic-layout">
+        <div class="comic-grid">
+            <img src="https://superboyda.github.io/superboyda/1c.png" alt="만화 1컷">
+            <img src="https://superboyda.github.io/superboyda/2c.png" alt="만화 2컷">
+            <img src="https://superboyda.github.io/superboyda/3c.png" alt="만화 3컷">
+            <img src="https://superboyda.github.io/superboyda/4c.png" alt="만화 4컷">
+        </div>
+    </div>
+
+    <div id="result_text"></div>
+
+    <input type="number" id="reque" placeholder="숫자를 입력해주세요" maxlength="3" oninput="maxLengthCheck(this)" autofocus>
+
+    <div class="button-layout">
+        <button id="answerB" class="btn">투구!!</button>
+        <button id="resetB" class="btn">처음부터</button>
+    </div>
+</div>
+
+<script>
+    // HTML 요소 변수 할당
+    const reque = document.getElementById('reque');
+    const resultText = document.getElementById('result_text');
+    const answerBtn = document.getElementById('answerB');
+    const resetBtn = document.getElementById('resetB');
+
+    // 게임 변수
+    let comNumbers = [];
+    let lifeCount = 10;
+    let strike = 0;
+    let ball = 0;
+    
+    // 페이지가 시작하면 자동으로 게임을 세팅하고 커서를 띄웁니다.
+    window.onload = function() {
+        initGame();
+    };
+
+    // 게임 자동 시작 및 초기화 로직
+    function initGame() {
+        reset();
+        randomNumber();
+        viewMode("start");
+        
+        // 입력창에 자동으로 커서가 들어가고 키보드가 뜨도록 유도
+        reque.focus(); 
+        resultText.innerText = "★ 숫자가 생성되었습니다. 게임 시작! ★\n\n";
+    }
+
+    // 버튼 이벤트 리스너 등록
+    answerBtn.addEventListener('click', function() {
+        numberCheck();
+        reque.value = ""; // 투구 후 입력창 비우기
+        reque.focus();    // 다시 커서 넣기
+    });
+
+    resetBtn.addEventListener('click', function() {
+        toastMessage("초기화");
+        initGame(); // 처음부터 버튼을 누르면 즉시 재시작
+    });
+
+    function toastMessage(msg) {
+        console.log(msg); 
+    }
+
+    // 화면 상태 관리 (시작 버튼이 없으므로 단순 활성화 관리)
+    function viewMode(mode) {
+        if (mode === "start") {
+            answerBtn.disabled = false;
+            resetBtn.disabled = false;
+            reque.disabled = false;
+        } else if (mode === "end") {
+            answerBtn.disabled = true;
+            reque.disabled = true;
+        }
+    }
+
+    // 중복 없는 랜덤 숫자 3개 생성 (1~9)
+    function randomNumber() {
+        let set = new Set();
+        while (set.size < 3) {
+            let randomValue = Math.floor(Math.random() * 9) + 1;
+            set.add(randomValue);
+        }
+        comNumbers = Array.from(set);
+        comNumbers.sort(() => Math.random() - 0.5); // 셔플
+    }
+
+    // 변수 초기화
+    function reset() {
+        lifeCount = 10;
+        resultText.innerText = "";
+        reque.value = "";
+        strike = 0;
+        ball = 0;
+    }
+
+    // 정답 체크 로직
+    function numberCheck() {
+        let inputNumber = reque.value;
+
+        if (inputNumber.length === 3) {
+            lifeCount--;
+
+            let userNumbers = [
+                parseInt(inputNumber.substring(0, 1)),
+                parseInt(inputNumber.substring(1, 2)),
+                parseInt(inputNumber.substring(2, 3))
+            ];
+
+            // 랜덤값과 입력값 비교
+            for (let num = 0; num < 3; num++) {
+                for (let num2 = 0; num2 < 3; num2++) {
+                    if (comNumbers[num] === userNumbers[num2]) {
+                        if (num === num2) {
+                            strike++;
+                        } else {
+                            ball++;
+                        }
+                    }
+                }
+            }
+
+            // 상단 상태창이 없으므로 결과창 내부에 정보를 가독성 있게 표현
+            if (strike === 3) {
+                toastMessage("성공");
+                resultText.innerText += `▶ ${inputNumber} : 3 Strike!! 홈런! 🎉\n`;
+                resultText.innerText += ` 정답: ${comNumbers.join('')} -> 게임 성공!\n`;
+                viewMode("end"); 
+            } else if (lifeCount === 0) {
+                toastMessage("실패");
+                resultText.innerText += `▶ ${inputNumber} : ${strike}S ${ball}B\n`;
+                resultText.innerText += ` 기회를 모두 소진했습니다. 실패! 😢\n`;
+                resultText.innerText += ` 정답은 [ ${comNumbers.join('')} ] 이었습니다.\n`;
+                viewMode("end"); 
+            } else {
+                showResult(inputNumber);
+            }
+
+            // 초기화
+            strike = 0;
+            ball = 0;
+
+        } else {
+            alert("숫자 3개를 입력해 주세요");
+        }
+    }
+
+    // 결과 텍스트 누적 기록 함수 (남은 기회 함께 표시)
+    function showResult(inputNumber) {
+        let result = `Strike: ${strike}, Ball: ${ball}`;
+        resultText.innerText += `[기회:${lifeCount}번]  ${inputNumber}  ☞  ${result}\n`;
+        // 스크롤을 항상 맨 아래로 유지
+        resultText.scrollTop = resultText.scrollHeight;
+    }
+
+    // 글자수 제한 보조 함수
+    function maxLengthCheck(object){
+        if (object.value.length > object.maxLength){
+            object.value = object.value.slice(0, object.maxLength);
+        }
+    }
+</script>
+</body>
+</html>
