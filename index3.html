@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>숫자 야구 게임</title>
+    <style>
+        /* 기본 레이아웃 및 폰트 설정 */
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+            font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+            display: flex;
+            justify-content: center;
+        }
+
+        /* 앱 화면(LinearLayout) 모방 컨테이너 */
+        .app-container {
+            width: 100%;
+            max-width: 400px;
+            background-color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            border: 2px solid #ccc;
+            box-sizing: border-box;
+        }
+
+        /* 4컷 만화 레이아웃 */
+        .comic-layout {
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-bottom: 2px solid #ccc;
+        }
+        .comic-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 6px;
+        }
+        
+        /* 컷 기본 상태 (숨김 및 위치 아래로) */
+        .comic-grid img {
+            width: 100%;
+            height: auto;
+            aspect-ratio: 4 / 3;
+            object-fit: cover;
+            border: 2px solid #333;
+            border-radius: 4px;
+            box-sizing: border-box;
+            
+            /* 애니메이션을 위한 설정 */
+            opacity: 0; 
+            transform: translateY(20px); 
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+
+        /* JS가 클래스를 추가하면 서서히 나타남 */
+        .comic-grid img.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* 결과 기록 텍스트 영역 */
+        #result_text {
+            height: 230px;
+            margin: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            overflow-y: auto; 
+            white-space: pre-wrap;
+            border: 2px dashed #FFED983A;
+            padding: 10px;
+            background-color: #fafafa;
+        }
+
+        /* 숫자 입력칸 */
+        #reque {
+            height: 40px;
+            margin: 0 10px;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            border: 2px solid #FFED983A;
+            border-radius: 5px;
+        }
+
+        /* 버튼 그룹 */
+        .button-layout {
+            display: flex;
+            margin: 10px 5px;
+        }
+        
+        /* 고정 버튼 스타일 */
+        .btn {
+            flex: 1;
+            margin: 0 5px;
+            padding: 12px 0;
+            background-color: #FFED983A !important; 
+            color: #000000 !important;             
+            font-size: 18px;
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="comic-layout">
+        <div class="comic-grid">
+            <img src="https://superboyda.github.io/superboyda/1c.png" alt="만화 1컷">
+            <img src="https://superboyda.github.io/superboyda/2c.png" alt="만화 2컷">
+            <img src="https://superboyda.github.io/superboyda/3c.png" alt="만화 3컷">
+            <img src="https://superboyda.github.io/superboyda/4c.png" alt="만화 4컷">
+        </div>
+    </div>
+
+    <div id="result_text"></div>
+
+    <input type="number" id="reque" placeholder="숫자를 입력해주세요" maxlength="3" oninput="maxLengthCheck(this)" autofocus>
+
+    <div class="button-layout">
+        <button id="answerB" class="btn">
