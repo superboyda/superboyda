@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>숫자 야구 게임</title>
+    <style>
+        /* 기본 레이아웃 및 폰트 설정 */
+        html, body {
+            margin: 0;
+            padding: 0;
+            min-height: 100%; 
+            background-color: #f0f0f0;
+            font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+        }
+
+        /* 앱 화면 모방 컨테이너 */
+        .app-container {
+            width: 100%;
+            max-width: 400px;
+            min-height: 100vh;
+            margin: 0 auto;
+            background-color: white;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            border-left: 2px solid #ccc;
+            border-right: 2px solid #ccc;
+            padding-bottom: 20px; /* 최하단 여백 */
+        }
+
+        /* 🎬 만화 영역 (유동적 높이 적용) */
+        .comic-layout {
+            position: relative; 
+            width: 100%;
+            border-bottom: 2px solid #ccc;
+            flex-shrink: 0;
+        }
+
+        /* 상자 높이를 그림 비율에 정확히 맞추기 위한 투명 기준점 */
+        .comic-placeholder {
+            width: 100%;
+            height: auto;
+            display: block;
+            visibility: hidden; 
+        }
+
+        /* 실제 재생되는 슬라이드 */
+        .comic-slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%; 
+            object-fit: cover; 
+            opacity: 0; 
+            transition: opacity 0.5s ease-in-out; 
+        }
+
+        .comic-slide.active {
+            opacity: 1;
+        }
+
+        /* 내용물에 따라 늘어나는 결과 기록 텍스트 영역 */
+        #result_text {
+            margin: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            white-space: pre-wrap;
+            border: 2px dashed #FFED983A;
+            padding: 10px;
+            background-color: #fafafa;
+            box-sizing: border-box;
+        }
+
+        /* 💡 결과창 바로 밑에 붙어서 움직이는 조작 영역 */
+        .bottom-controls {
+            width: 100%;
+            /* margin-top: auto; <-- 기존 화면 하단 고정 속성 제거 */
+            box-sizing: border-box;
+        }
+
+        #reque {
+            display: block;
+            width: calc(100% - 20px);
+            height: 40px;
+            margin: 0 10px 10px 10px;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            border: 2px solid #FFED983A;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        .button-layout {
+            display: flex;
+            margin: 0 10px;
+            gap: 10px;
+        }
+        
+        .btn {
+            flex: 1;
+            padding: 12px 0;
+            background-color: #FFED983A !important; 
+            color: #000000 !important;             
+            font-size: 18px;
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    
+    <div class="comic-layout">
+        <img src="https://superboyda.github.io/superboyda/1c.png" class="comic-placeholder" alt="빈 기준점">
+        
+        <img src="https://superboyda.github.io/superboyda/1c.png" class="comic-slide" alt="만화 1컷">
+        <img src="https://superboyda.github.io/superboyda/2c.png" class="comic-slide" alt="만화 2컷">
+        <img src="https://superboyda.github.io/superboyda/3c.png" class="comic-slide" alt="만화 3컷">
+        <img src="https://superboyda.github.io/superboyda/4c.png" class="comic-slide" alt="만화 4컷">
+    </div>
+
+    <div id="result_text"></div>
+
+    <div class="bottom-controls">
+        <input type="number" id="reque" placeholder="숫자를 입력해주세요" maxlength="3" oninput="maxLengthCheck(this)">
+        <div class="button-layout">
+            <button id="answerB" class="btn">투구!!</button>
+            <button id="resetB" class="btn">처음부터</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const reque = document.getElementById('reque');
+    const resultText = document.getElementById('result_text');
+    const answerBtn = document.getElementById('answerB');
+    const resetBtn = document.getElementById('resetB');
+
+    let comNumbers = [];
+    let lifeCount = 10;
+    let strike = 0;
+    let ball = 0;
+    
+    window.onload = function() {
+        playComics(); 
+    };
+
+    function playComics() {
+        const slides = document.querySelectorAll('.comic-slide');
+        let currentSlide = 0;
+
+        slides[currentSlide].classList.add('active');
+
+        const slideInterval = setInterval(() => {
+            if (currentSlide < slides.length - 1) {
+                slides[currentSlide].classList.remove('active'); 
+                currentSlide++; 
+                slides[currentSlide].classList.add('active'); 
+            } else {
+                clearInterval(slideInterval);
+                initGame();
+            }
+        }, 3000); 
+    }
+
+    function initGame() {
+        reset();
+        randomNumber();
+        viewMode("start");
+        
+        reque.focus(); 
+        resultText.innerText = "★ 숫자를 맞춰 보세요! 기회는 10번 ★\n\n";
+    }
+
+    answerBtn.addEventListener('click', function() {
+        numberCheck();
+        reque.value = ""; 
+        reque.focus();    
+    });
+
+    resetBtn.addEventListener('click', function() {
+        initGame(); 
+    });
+
+    function viewMode(mode) {
+        if (mode === "start") {
+            answerBtn.disabled = false;
+            resetBtn.disabled = false;
+            reque.disabled = false;
+        } else if (mode === "end") {
+            answerBtn.disabled = true;
+            reque.disabled = true;
+        }
+    }
+
+    function randomNumber() {
+        let set = new Set();
+        while (set.size < 3) {
+            let randomValue = Math.floor(Math.random() * 9) + 1;
+            set.add(randomValue);
+        }
+        comNumbers = Array.from(set);
+        comNumbers.sort(() => Math.random() - 0.5); 
+    }
+
+    function reset() {
+        lifeCount = 10;
+        resultText.innerText = "";
+        reque.value = "";
+        strike = 0;
+        ball = 0;
+    }
+
+    function numberCheck() {
+        let inputNumber = reque.value;
+
+        if (inputNumber.length === 3) {
+            lifeCount--;
+
+            let userNumbers = [
+                parseInt(inputNumber.substring(0, 1)),
+                parseInt(inputNumber.substring(1, 2)),
+                parseInt(inputNumber.substring(2, 3))
+            ];
+
+            for (let num = 0; num < 3; num++) {
+                for (let num2 = 0; num2 < 3; num2++) {
+                    if (comNumbers[num] === userNumbers[num2]) {
+                        if (num === num2) {
+                            strike++;
+                        } else {
+                            ball++;
+                        }
+                    }
+                }
+            }
+
+            if (strike === 3) {
+                resultText.innerText += `▶ ${inputNumber} : 3 Strike!! 홈런! 🎉\n`;
+                resultText.innerText += ` 정답: ${comNumbers.join('')} -> 게임 성공!\n`;
+                viewMode("end"); 
+            } else if (lifeCount === 0) {
+                resultText.innerText += `▶ ${inputNumber} : ${strike}S ${ball}B\n`;
+                resultText.innerText += ` 기회를 모두 소진했습니다. 실패! 😢\n`;
+                resultText.innerText += ` 정답은 [ ${comNumbers.join('')} ] 이었습니다.\n`;
+                viewMode("end"); 
+            } else {
+                showResult(inputNumber);
+            }
+
+            strike = 0;
+            ball = 0;
+
+        } else {
+            alert("숫자 3개를 입력해 주세요");
+        }
+    }
+
+    function showResult(inputNumber) {
+        let result = `Strike: ${strike}, Ball: ${ball}`;
+        resultText.innerText += `[남은기회:${lifeCount}번]  ${inputNumber}  ☞  ${result}\n`;
+        
+        // 결과창 기준 레이아웃이므로 브라우저 스크롤을 맨 아래로 내려 화면 이탈을 방지합니다.
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }
+
+    function maxLengthCheck(object){
+        if (object.value.length > object.maxLength){
+            object.value = object.value.slice(0, object.maxLength);
+        }
+    }
+</script>
+</body>
+</html>
